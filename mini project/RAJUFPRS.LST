@@ -1,0 +1,793 @@
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE RAJUFPRS
+OBJECT MODULE PLACED IN RAJUFPRS.OBJ
+COMPILER INVOKED BY: E:\keil4 dumped dont delet\C51\BIN\C51.EXE RAJUFPRS.C BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include<reg51.h>
+   2          #include"uart.h"
+   3          #include"lcddisplay.h"
+   4          #include <string.h>
+   5          
+   6          
+   7          sbit enrol    = P3^4;
+   8          sbit identifi = P3^5;
+   9          sbit over         = P3^6;
+  10           
+  11          sbit m1a = P0^0;
+  12          sbit m1b = P0^1;
+  13          
+  14          sbit row0 = P1^0;         
+  15          sbit row1 = P1^1;
+  16          sbit row2 = P1^2;
+  17          sbit row3 = P1^3;
+  18          sbit col0 = P1^4;
+  19          sbit col1 = P1^5;
+  20          sbit col2 = P1^6;
+  21          
+  22          
+  23          unsigned char i=0,fp[20],j=0;
+  24          unsigned char rec=0x00,dummy=0x0f,id,ckey,r,msg[10];
+  25          
+  26          void enroll_finger(void);
+  27          void identify_finger(void);
+  28          
+  29          code unsigned char enroll[12]={0xEF,0X01,0XFF,0XFF,0XFF,0XFF,0X01,0X00,0X03,0X01,0X00,0X05};   // ok
+  30          
+  31          code unsigned char generate_ch1[13]={0xEF,0X01,0XFF,0XFF,0XFF,0XFF,0X01,0X00,0X04,0x02,0X02,0X00,0X09};  /
+             -/ok
+  32          code unsigned char un_cmd[12]={0xef,0x01,0xff,0xff,0xff,0xff, 0x01,0x00,0x03,0x05,0x00,0x09 };
+  33          code unsigned char store[12]={0xEF,0X01,0XFF,0XFF,0XFF,0XFF,0X01,0X00,0X06,0X06,0X02,0x00};                     //ok
+  34          code unsigned char identify[17]={0xef,0x01,0xff,0xff,0xff,0xff,0x01,0x00,0x08,0x1b,0x01,0x00,0x00,0x01,0x0
+             -1,0x00,0x27}; 
+  35          
+  36          unsigned char psw1[]="1234",psw2[]="2345",psw3[]="3456",psw4[]="4567",psw5[]="5678";
+  37          unsigned char key[4][3] = { '1', '2', '3',
+  38                                          '4', '5', '6',
+  39                                                                              '7', '8', '9',
+  40                                                                                       '*', '0', '#'}; 
+  41          
+  42          
+  43          
+  44          
+  45          
+  46          unsigned char  keypad()
+  47          {
+  48   1       unsigned char c0,c1,c2,k=0;
+  49   1      
+  50   1      
+  51   1      
+  52   1       
+  53   1       while(1)
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 2   
+
+  54   1       {
+  55   2       row0 = 0;                                              //make rows as o/p's
+  56   2       row1 = 0;
+  57   2       row2 = 0;
+  58   2       row3 = 0;
+  59   2       col0 = 1;                                              //make columns as i/p's
+  60   2       col1 = 1;
+  61   2       col2 = 1;
+  62   2       
+  63   2       do
+  64   2        {
+  65   3         c0 = col0;
+  66   3         c1 = col1;
+  67   3         c2 = col2;
+  68   3         }while((c0!=1)||(c1!=1)||(c2!=1));             //check all keys are released 
+  69   2         
+  70   2       do
+  71   2        {
+  72   3         c0 = col0;
+  73   3         c1 = col1;
+  74   3         c2 = col2;
+  75   3        }while((c0==1)&&(c1==1)&&(c2==1));             //check any key is pressed
+  76   2      
+  77   2        while(1)
+  78   2           {
+  79   3                 row0 = 0;
+  80   3             row1 = 1;
+  81   3             row2 = 1;
+  82   3             row3 = 1;
+  83   3             c0 = col0;
+  84   3             c1 = col1;
+  85   3             c2 = col2;
+  86   3      
+  87   3                 if((c0!=1)||(c1!=1)||(c2!=1))
+  88   3                  { 
+  89   4                        r = 0;
+  90   4                        break;
+  91   4                      }
+  92   3      
+  93   3             row0 = 1;
+  94   3             row1 = 0;
+  95   3             row2 = 1;
+  96   3             row3 = 1;
+  97   3             c0 = col0;
+  98   3             c1 = col1;
+  99   3             c2 = col2;
+ 100   3      
+ 101   3                 if((c0!=1)||(c1!=1)||(c2!=1))
+ 102   3                   { 
+ 103   4                        r = 1;
+ 104   4                        break;
+ 105   4                       }  
+ 106   3      
+ 107   3             row0 = 1;
+ 108   3             row1 = 1;
+ 109   3             row2 = 0;
+ 110   3             row3 = 1;
+ 111   3             c0 = col0;
+ 112   3             c1 = col1;
+ 113   3             c2 = col2;
+ 114   3      
+ 115   3                 if((c0!=1)||(c1!=1)||(c2!=1))
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 3   
+
+ 116   3                  { 
+ 117   4                        r = 2;
+ 118   4                        break;
+ 119   4                      }
+ 120   3      
+ 121   3             row0 = 1;
+ 122   3             row1 = 1;
+ 123   3             row2 = 1;
+ 124   3             row3 = 0;
+ 125   3             c0 = col0;
+ 126   3             c1 = col1;
+ 127   3             c2 = col2;
+ 128   3      
+ 129   3                 if((c0!=1)||(c1!=1)||(c2!=1))
+ 130   3                  { 
+ 131   4                        r = 3;
+ 132   4                        break;
+ 133   4                      }
+ 134   3           }
+ 135   2               
+ 136   2               if((c0==0)&&(c1==1)&&(c2==1))
+ 137   2                {
+ 138   3                  k = key[r][0];
+ 139   3                      return (k);
+ 140   3                }
+ 141   2      
+ 142   2               else if((c0==1)&&(c1==0)&&(c2==1))
+ 143   2                {
+ 144   3                  k = key[r][1];
+ 145   3                      return (k);
+ 146   3                }
+ 147   2      
+ 148   2               else //if((c0==1)&&(c1==1)&&(c2==0))
+ 149   2                {
+ 150   3                  k = key[r][2];
+ 151   3                      return (k);
+ 152   3                }
+ 153   2       }
+ 154   1      }
+ 155          
+ 156          
+ 157          
+ 158                                                                                      
+ 159                                                                                  
+ 160          void serial() interrupt 4                       
+ 161          {
+ 162   1       if(RI==1)
+ 163   1       {
+ 164   2        fp[j]= SBUF;
+ 165   2        j++;
+ 166   2        RI=0;
+ 167   2       }
+ 168   1      }
+ 169          
+ 170          
+ 171          
+ 172          void long_delay (void )
+ 173          {
+ 174   1       unsigned int g,k;
+ 175   1       for(g=0;g<50;g++)
+ 176   1       for(k=0;k<500;k++);
+ 177   1      }
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 4   
+
+ 178          
+ 179          
+ 180          void main()
+ 181          {
+ 182   1      m1a=m1b=0;
+ 183   1       lcd_init();
+ 184   1       delay(50);
+ 185   1       uart_init();
+ 186   1       delay(50);
+ 187   1      
+ 188   1       lcdcmd(0x01);
+ 189   1       msgdisplay("Home Security ");
+ 190   1       lcdcmd(0xc0);
+ 191   1       msgdisplay("Using Biometric");
+ 192   1      
+ 193   1              i=0;
+ 194   1              while(1)
+ 195   1               {
+ 196   2               ckey = keypad();
+ 197   2               delay(200);
+ 198   2               if(ckey == '#')
+ 199   2                {
+ 200   3                
+ 201   3                 msg[i] = '\0';
+ 202   3                 i=0;
+ 203   3                 break;
+ 204   3                }
+ 205   2                
+ 206   2               }
+ 207   1      
+ 208   1       
+ 209   1       lcdcmd(0x01);
+ 210   1       msgdisplay("***WELCOME***");
+ 211   1       delay(500);
+ 212   1      
+ 213   1       lcdcmd(0x01);
+ 214   1       msgdisplay("Home Security ");
+ 215   1       lcdcmd(0xc0);
+ 216   1       msgdisplay("Using Biometric");
+ 217   1      
+ 218   1       delay(1000);
+ 219   1      
+ 220   1       again:
+ 221   1       long_delay();
+ 222   1       lcdcmd(0x01);
+ 223   1       msgdisplay("PUT UR FINGER");
+ 224   1        
+ 225   1       EA=1;
+ 226   1       ES=1; 
+ 227   1      
+ 228   1       while(1)
+ 229   1       {
+ 230   2       
+ 231   2        if(enrol == 0)                //checking for enrolling
+ 232   2        {
+ 233   3         while(enrol == 0);
+ 234   3         
+ 235   3         enroll_finger();
+ 236   3         goto again;
+ 237   3        }
+ 238   2      
+ 239   2        if(identifi == 0)                     //identify
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 5   
+
+ 240   2        {
+ 241   3         while(identifi == 0);
+ 242   3         
+ 243   3         identify_finger();
+ 244   3         goto again;
+ 245   3        } 
+ 246   2       }
+ 247   1      }
+ 248          
+ 249          void enroll_finger(void)
+ 250          {
+ 251   1         
+ 252   1         i=0;
+ 253   1      
+ 254   1         while(i<12)
+ 255   1         {
+ 256   2          ch_send_to_modem(enroll[i]);
+ 257   2          i++;
+ 258   2         }
+ 259   1         j=0;
+ 260   1         fp[9]=0x01;
+ 261   1         while(j==0);
+ 262   1         long_delay();                                           
+ 263   1         if(fp[9]==0x00)
+ 264   1         {
+ 265   2         }
+ 266   1         else
+ 267   1         {
+ 268   2          lcdcmd(0xc0);                                                
+ 269   2          msgdisplay("ENROLL FAILED");
+ 270   2          long_delay();
+ 271   2              long_delay();
+ 272   2              goto end;
+ 273   2         }
+ 274   1      
+ 275   1         
+ 276   1         j=0;
+ 277   1         i=0;
+ 278   1         while(i<13)
+ 279   1         {
+ 280   2      
+ 281   2          i++;
+ 282   2         }
+ 283   1         j=0;
+ 284   1         fp[9]=0x01;
+ 285   1         while(j==0);
+ 286   1         long_delay();          
+ 287   1         if(fp[9]==0x00)
+ 288   1         {
+ 289   2         }
+ 290   1         else
+ 291   1         {
+ 292   2          lcdcmd(0xc0);                                                
+ 293   2          msgdisplay("ENROLL FAILED");
+ 294   2          long_delay();
+ 295   2              long_delay();
+ 296   2              goto end;
+ 297   2         }
+ 298   1      
+ 299   1         i=0;
+ 300   1         
+ 301   1         while(i<12)
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 6   
+
+ 302   1         {
+ 303   2          ch_send_to_modem(enroll[i]);
+ 304   2          i++;
+ 305   2         }
+ 306   1         j=0;
+ 307   1         fp[9]=0x01;
+ 308   1         while(j==0);
+ 309   1         long_delay();
+ 310   1         if(fp[9]==0x00)
+ 311   1         {
+ 312   2         }
+ 313   1         else
+ 314   1         {
+ 315   2          lcdcmd(0xc0);                                                
+ 316   2          msgdisplay("ENROLL FAILED");
+ 317   2          long_delay();
+ 318   2              long_delay();
+ 319   2              goto end;
+ 320   2         }
+ 321   1      
+ 322   1         
+ 323   1         j=0;
+ 324   1         i=0;
+ 325   1         while(i<13)
+ 326   1         {
+ 327   2          ch_send_to_modem(generate_ch1[i]);
+ 328   2          i++;
+ 329   2         }
+ 330   1         j=0;
+ 331   1         fp[9]=0x01;
+ 332   1         while(j==0);
+ 333   1         long_delay();          
+ 334   1         if(fp[9]==0x00)
+ 335   1         {
+ 336   2         }
+ 337   1         else
+ 338   1         {
+ 339   2          lcdcmd(0xc0);                                                
+ 340   2          msgdisplay("ENROLL FAILED");
+ 341   2          long_delay();
+ 342   2              long_delay();
+ 343   2              goto end;
+ 344   2         }
+ 345   1      
+ 346   1         
+ 347   1         j=0;
+ 348   1         i=0;
+ 349   1         while(i<12)
+ 350   1         {
+ 351   2          ch_send_to_modem(un_cmd[i]);
+ 352   2          i++;
+ 353   2         }
+ 354   1         j=0;
+ 355   1         fp[9]=0x01;
+ 356   1         while(j==0);
+ 357   1         long_delay();          
+ 358   1         if(fp[9]==0x00)
+ 359   1         {
+ 360   2         }
+ 361   1         else
+ 362   1         { 
+ 363   2          lcdcmd(0xc0);                                                
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 7   
+
+ 364   2          msgdisplay("ENROLL FAILED");
+ 365   2      
+ 366   2          long_delay();
+ 367   2              long_delay();
+ 368   2              goto end;
+ 369   2         }
+ 370   1      
+ 371   1         
+ 372   1         j=0;
+ 373   1         i=0;
+ 374   1         while(i<12)
+ 375   1         {
+ 376   2          ch_send_to_modem(store[i]);
+ 377   2          i++;
+ 378   2         }
+ 379   1         ch_send_to_modem(rec);
+ 380   1         ch_send_to_modem(0x00);
+ 381   1         ch_send_to_modem(dummy);
+ 382   1         j=0;
+ 383   1         fp[9]=0x01;
+ 384   1         while(j==0);
+ 385   1         long_delay();
+ 386   1              
+ 387   1         if(fp[9]==0x00)
+ 388   1         {
+ 389   2              lcdcmd(0x01);                                                
+ 390   2          msgdisplay("successfully ");
+ 391   2              lcdcmd(0xc0);                                                
+ 392   2          msgdisplay("Enrolled");
+ 393   2              
+ 394   2              msgdisplay("ID:");
+ 395   2              lcddata(rec);
+ 396   2          
+ 397   2      
+ 398   2          dummy++; 
+ 399   2          long_delay();
+ 400   2              long_delay();
+ 401   2              goto end;
+ 402   2         }
+ 403   1         else
+ 404   1         {
+ 405   2          lcdcmd(0xc0);                                                
+ 406   2          msgdisplay("ENROLL FAILED");
+ 407   2              long_delay();
+ 408   2              long_delay();
+ 409   2              goto end;
+ 410   2         } 
+ 411   1         end:   
+ 412   1         delay(10);
+ 413   1      }
+ 414          
+ 415          void identify_finger(void)
+ 416          {
+ 417   1      
+ 418   1      
+ 419   1       i=0;
+ 420   1       
+ 421   1       while(i<12)
+ 422   1       {
+ 423   2        ch_send_to_modem(enroll[i]);
+ 424   2        i++;
+ 425   2       }
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 8   
+
+ 426   1       j=0;
+ 427   1       fp[9]=0x01;
+ 428   1       while(j==0);
+ 429   1       long_delay();                                             
+ 430   1       if(fp[9]==0x00)
+ 431   1       {
+ 432   2       }
+ 433   1       else
+ 434   1       {
+ 435   2        lcdcmd(0xc0);                                                
+ 436   2        msgdisplay("UnAuthorized....");
+ 437   2         ES=0; 
+ 438   2      
+ 439   2        goto end;
+ 440   2       }
+ 441   1      
+ 442   1       
+ 443   1       j=0;
+ 444   1       i=0;
+ 445   1       while(i<13)
+ 446   1       {
+ 447   2      
+ 448   2        i++;
+ 449   2       }
+ 450   1       j=0;
+ 451   1       fp[9]=0x01;
+ 452   1       while(j==0);
+ 453   1       long_delay();    
+ 454   1       if(fp[9]==0x00)
+ 455   1       {
+ 456   2       }
+ 457   1       else
+ 458   1       {
+ 459   2        lcdcmd(0xc0);                                                
+ 460   2        msgdisplay("UnAuthorized....");
+ 461   2         ES=0; 
+ 462   2      
+ 463   2        goto end;
+ 464   2       }
+ 465   1         
+ 466   1      
+ 467   1       
+ 468   1       i=0;  
+ 469   1       j=0;
+ 470   1       while(i<17)
+ 471   1       {
+ 472   2        ch_send_to_modem(identify[i]);
+ 473   2        i++;
+ 474   2       }
+ 475   1       j=0;
+ 476   1       while(j==0);
+ 477   1       long_delay();
+ 478   1         
+ 479   1       if(fp[9]==0x00)
+ 480   1       {
+ 481   2        lcdcmd(0x01);                                                
+ 482   2        msgdisplay("Successfully ");
+ 483   2        lcdcmd(0xc0);                                                
+ 484   2        msgdisplay("Authorized:");
+ 485   2       
+ 486   2        id=fp[11];
+ 487   2        lcddata(id);
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 9   
+
+ 488   2       
+ 489   2         long_delay(); 
+ 490   2        long_delay();
+ 491   2      
+ 492   2        lcdcmd(0x01);
+ 493   2        msgdisplay("ENTER PSWRD");
+ 494   2        lcdcmd(0XC0);
+ 495   2      
+ 496   2              i=0;
+ 497   2              while(1)
+ 498   2               {
+ 499   3               ckey = keypad();
+ 500   3               delay(200);
+ 501   3               if(ckey == '#')
+ 502   3                {
+ 503   4                
+ 504   4                 msg[i] = '\0';
+ 505   4                 i=0;
+ 506   4                 break;
+ 507   4                }
+ 508   3               
+ 509   3               }
+ 510   2      
+ 511   2        if(id==0)
+ 512   2        {
+ 513   3         if(!strcmp(psw1,msg))
+ 514   3          {
+ 515   4              lcdcmd(0x01);
+ 516   4          msgdisplay("PSWD AUTHORIZED");
+ 517   4          lcdcmd(0XC0);
+ 518   4              m1a=1;
+ 519   4              m1b=0;
+ 520   4         lcdcmd(0x01);
+ 521   4          msgdisplay("Door Opening");
+ 522   4          delay(2000);
+ 523   4              m1a=0;
+ 524   4              m1b=0;
+ 525   4         lcdcmd(0x01);
+ 526   4          msgdisplay("Door Opened  ");
+ 527   4          delay(2000);
+ 528   4          m1a=0;
+ 529   4              m1b=1;
+ 530   4         lcdcmd(0x01);
+ 531   4          msgdisplay("Door Closing");
+ 532   4          delay(2000);
+ 533   4              m1a=0;
+ 534   4              m1b=0;
+ 535   4         lcdcmd(0x01);
+ 536   4          msgdisplay("Door Closed  ");
+ 537   4          delay(2000);
+ 538   4          }
+ 539   3              else
+ 540   3               goto end1;
+ 541   3        }
+ 542   2      
+ 543   2        else
+ 544   2         if(id == 1)
+ 545   2         {
+ 546   3          if(!strcmp(psw2,msg))
+ 547   3          {
+ 548   4        
+ 549   4              lcdcmd(0x01);
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 10  
+
+ 550   4          msgdisplay("PSWD AUTHORIZED");
+ 551   4          lcdcmd(0XC0);
+ 552   4              m1a=1;
+ 553   4              m1b=0;
+ 554   4         lcdcmd(0x01);
+ 555   4          msgdisplay("Door Opening");
+ 556   4          delay(2000);
+ 557   4              m1a=0;
+ 558   4              m1b=0;
+ 559   4         lcdcmd(0x01);
+ 560   4          msgdisplay("Door Opened  ");
+ 561   4          delay(2000);
+ 562   4          m1a=0;
+ 563   4              m1b=1;
+ 564   4         lcdcmd(0x01);
+ 565   4          msgdisplay("Door Closing");
+ 566   4          delay(2000);
+ 567   4              m1a=0;
+ 568   4              m1b=0;
+ 569   4         lcdcmd(0x01);
+ 570   4          msgdisplay("Door Closed  ");
+ 571   4          delay(2000);        }
+ 572   3              else
+ 573   3               goto end1;
+ 574   3      
+ 575   3              
+ 576   3         }
+ 577   2      
+ 578   2        else
+ 579   2         if(id == 2)
+ 580   2         {
+ 581   3          if(!strcmp(psw3,msg))
+ 582   3          {
+ 583   4        
+ 584   4              lcdcmd(0x01);
+ 585   4          msgdisplay("PSWD AUTHORIZED");
+ 586   4          lcdcmd(0XC0);
+ 587   4              m1a=1;
+ 588   4              m1b=0;
+ 589   4         lcdcmd(0x01);
+ 590   4          msgdisplay("Door Opening");
+ 591   4          delay(2000);
+ 592   4              m1a=0;
+ 593   4              m1b=0;
+ 594   4         lcdcmd(0x01);
+ 595   4          msgdisplay("Door Opened  ");
+ 596   4          delay(2000);
+ 597   4          m1a=0;
+ 598   4              m1b=1;
+ 599   4         lcdcmd(0x01);
+ 600   4          msgdisplay("Door Closing");
+ 601   4          delay(2000);
+ 602   4              m1a=0;
+ 603   4              m1b=0;
+ 604   4         lcdcmd(0x01);
+ 605   4          msgdisplay("Door Closed  ");
+ 606   4          delay(2000);  
+ 607   4              }
+ 608   3              else
+ 609   3               goto end1;
+ 610   3      
+ 611   3              
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 11  
+
+ 612   3         }
+ 613   2       
+ 614   2        else
+ 615   2         if(id == 3)
+ 616   2         {
+ 617   3          if(!strcmp(psw4,msg))
+ 618   3          {
+ 619   4        
+ 620   4              lcdcmd(0x01);
+ 621   4          msgdisplay("PSWD AUTHORIZED");
+ 622   4          lcdcmd(0XC0);
+ 623   4              m1a=1;
+ 624   4              m1b=0;
+ 625   4         lcdcmd(0x01);
+ 626   4          msgdisplay("Door Opening");
+ 627   4          delay(2000);
+ 628   4              m1a=0;
+ 629   4              m1b=0;
+ 630   4         lcdcmd(0x01);
+ 631   4          msgdisplay("Door Opened  ");
+ 632   4          delay(2000);
+ 633   4          m1a=0;
+ 634   4              m1b=1;
+ 635   4         lcdcmd(0x01);
+ 636   4          msgdisplay("Door Closing");
+ 637   4          delay(2000);
+ 638   4              m1a=0;
+ 639   4              m1b=0;
+ 640   4         lcdcmd(0x01);
+ 641   4          msgdisplay("Door Closed  ");
+ 642   4          delay(2000);  
+ 643   4              }
+ 644   3              else
+ 645   3               goto end1;
+ 646   3      
+ 647   3              
+ 648   3         }
+ 649   2      
+ 650   2        else
+ 651   2         if(id == 4)
+ 652   2         {
+ 653   3          if(!strcmp(psw5,msg))
+ 654   3          {
+ 655   4        
+ 656   4              lcdcmd(0x01);
+ 657   4          msgdisplay("PSWD AUTHORIZED");
+ 658   4          lcdcmd(0XC0);
+ 659   4              m1a=1;
+ 660   4              m1b=0;
+ 661   4         lcdcmd(0x01);
+ 662   4          msgdisplay("Door Opening");
+ 663   4          delay(2000);
+ 664   4              m1a=0;
+ 665   4              m1b=0;
+ 666   4         lcdcmd(0x01);
+ 667   4          msgdisplay("Door Opened  ");
+ 668   4          delay(2000);
+ 669   4          m1a=0;
+ 670   4              m1b=1;
+ 671   4         lcdcmd(0x01);
+ 672   4          msgdisplay("Door Closing");
+ 673   4          delay(2000);
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 12  
+
+ 674   4              m1a=0;
+ 675   4              m1b=0;
+ 676   4         lcdcmd(0x01);
+ 677   4          msgdisplay("Door Closed  ");
+ 678   4          delay(2000);  
+ 679   4              }
+ 680   3              else
+ 681   3               goto end1;
+ 682   3              
+ 683   3         }
+ 684   2        else
+ 685   2        {
+ 686   3              end1:
+ 687   3              lcdcmd(0x01);
+ 688   3          msgdisplay("PSWD ");
+ 689   3          lcdcmd(0XC0);
+ 690   3              msgdisplay("UNAUTHORIZED");
+ 691   3      
+ 692   3              delay(2000);
+ 693   3              
+ 694   3              
+ 695   3              goto end;
+ 696   3        }
+ 697   2      
+ 698   2         while(over == 1);
+ 699   2      
+ 700   2         lcdcmd(0x01);
+ 701   2          msgdisplay("THANQ FOR");
+ 702   2          lcdcmd(0XC0);
+ 703   2              msgdisplay("USING System");
+ 704   2              delay(1000);
+ 705   2         
+ 706   2              lcdcmd(0x01);
+ 707   2          msgdisplay("PSWD AUTHORIZED");
+ 708   2          lcdcmd(0XC0);
+ 709   2              m1a=1;
+ 710   2              m1b=0;
+ 711   2         lcdcmd(0x01);
+ 712   2          msgdisplay("Door Opening");
+ 713   2          delay(2000);
+ 714   2              m1a=0;
+ 715   2              m1b=0;
+ 716   2         lcdcmd(0x01);
+ 717   2          msgdisplay("Door Opened  ");
+ 718   2          delay(2000);
+ 719   2          m1a=0;
+ 720   2              m1b=1;
+ 721   2         lcdcmd(0x01);
+ 722   2          msgdisplay("Door Closing");
+ 723   2          delay(2000);
+ 724   2              m1a=0;
+ 725   2              m1b=0;
+ 726   2         lcdcmd(0x01);
+ 727   2          msgdisplay("Door Closed  ");
+ 728   2          delay(2000);
+ 729   2         
+ 730   2        goto end;
+ 731   2       }
+ 732   1       else
+ 733   1       {
+ 734   2        
+ 735   2        lcdcmd(0xc0);                                                
+C51 COMPILER V9.01   RAJUFPRS                                                              07/26/2014 14:43:52 PAGE 13  
+
+ 736   2        msgdisplay("UnAuthorized....");
+ 737   2         ES=0; 
+ 738   2          long_delay();
+ 739   2       
+ 740   2         goto end;
+ 741   2       }
+ 742   1       end:
+ 743   1       delay(10);
+ 744   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1609    ----
+   CONSTANT SIZE    =    333    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     74       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
